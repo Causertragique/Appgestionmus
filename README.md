@@ -236,3 +236,4 @@ Pour toute question ou problème :
 Application de gestion pour enseignant avec Firebase
 >>>>>>> 6ed0b2ed728769bbaddef0c9253500641f859f0a
 >>>>>>> d366cc0df25101893658782957fb65b9d95579c4
+# Fri Jun 20 00:50:36 EDT 2025
