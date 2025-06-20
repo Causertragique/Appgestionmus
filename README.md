@@ -227,4 +227,12 @@ Pour toute question ou problème :
 
 ---
 
+<<<<<<< HEAD
 **🎵 Développé avec passion pour les professeurs de musique !** 
+=======
+**🎵 Développé avec passion pour les professeurs de musique !** 
+=======
+# Appgestionmus
+Application de gestion pour enseignant avec Firebase
+>>>>>>> 6ed0b2ed728769bbaddef0c9253500641f859f0a
+>>>>>>> d366cc0df25101893658782957fb65b9d95579c4
