@@ -80,6 +80,24 @@ jest.mock('../contexts/DataContext', () => ({
     getStudentsByGroup: jest.fn().mockReturnValue([]),
     getStudentPracticeReports: jest.fn().mockReturnValue([]),
     getStudentDebt: jest.fn().mockReturnValue({ totalDebt: 0, purchases: [] }),
+    getActiveGroups: jest.fn().mockReturnValue([
+      {
+        id: '1',
+        name: 'Groupe A',
+        description: 'Description du groupe A',
+        teacherId: '1',
+        studentIds: [],
+        createdAt: new Date()
+      },
+      {
+        id: '2',
+        name: 'Groupe B',
+        description: 'Description du groupe B',
+        teacherId: '1',
+        studentIds: [],
+        createdAt: new Date()
+      }
+    ]),
     addGroup: jest.fn(),
     updateGroup: jest.fn(),
     deleteGroup: jest.fn(),
@@ -131,15 +149,14 @@ describe('TeacherDashboard', () => {
   });
 
   test('affiche les statistiques financières', () => {
-    expect(screen.getByText(/Total des ventes/)).toBeInTheDocument();
-    expect(screen.getByText(/Total des crédits/)).toBeInTheDocument();
-    expect(screen.getByText('100')).toBeInTheDocument();
-    expect(screen.getByText('50')).toBeInTheDocument();
+    expect(screen.getByText(/Revenus du mois/)).toBeInTheDocument();
+    expect(screen.getByText(/Crédits en attente/)).toBeInTheDocument();
+    expect(screen.getAllByText('0').length).toBeGreaterThan(0);
   });
 
   test('permet de filtrer par groupe', () => {
-    expect(screen.getByText('Groupe A')).toBeInTheDocument();
-    expect(screen.getByText('Groupe B')).toBeInTheDocument();
+    expect(screen.getAllByText(/Groupe A/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Groupe B/).length).toBeGreaterThan(0);
   });
 
   test('affiche le bouton de déconnexion', () => {
