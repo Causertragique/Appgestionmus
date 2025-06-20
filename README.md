@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🎵 Application Teacher-Student - Gestion de Cours de Musique
 
 Une application React/TypeScript moderne pour la gestion des cours de musique entre professeurs et élèves, avec authentification Firebase et déploiement Vercel.
