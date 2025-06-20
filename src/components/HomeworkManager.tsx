@@ -340,7 +340,12 @@ export default function HomeworkManager({ selectedGroupId }: HomeworkManagerProp
 
       {/* Modal de détail de pratique */}
       {viewingPracticeDetail && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="practice-detail-title"
+        >
           <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               {(() => {
@@ -364,7 +369,10 @@ export default function HomeworkManager({ selectedGroupId }: HomeworkManagerProp
                   <div>
                     <div className="flex justify-between items-center mb-6">
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900">
+                        <h3 
+                          id="practice-detail-title"
+                          className="text-xl font-semibold text-gray-900"
+                        >
                           Détails de la Pratique
                         </h3>
                         <p className="text-sm text-gray-600 mt-1">
@@ -374,6 +382,7 @@ export default function HomeworkManager({ selectedGroupId }: HomeworkManagerProp
                       <button
                         onClick={() => setViewingPracticeDetail(null)}
                         className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                        aria-label="Fermer les détails de pratique"
                       >
                         <X className="w-5 h-5" />
                       </button>
