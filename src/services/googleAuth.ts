@@ -1,8 +1,8 @@
 // Configuration Google OAuth
-export const GOOGLE_CONFIG = {
-  clientId: process.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id',
-  redirectUri: `${window.location.origin}/auth/google/callback`,
-  scope: 'openid email profile'
+const config = {
+  clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your-google-client-id',
+  redirectUri: window.location.origin + '/auth/google/callback',
+  scope: 'openid profile email',
 };
 
 // Interface pour la réponse Google
@@ -69,10 +69,10 @@ export class GoogleAuthService {
    */
   private buildAuthUrl(): string {
     const params = new URLSearchParams({
-      client_id: GOOGLE_CONFIG.clientId,
-      redirect_uri: GOOGLE_CONFIG.redirectUri,
+      client_id: config.clientId,
+      redirect_uri: config.redirectUri,
       response_type: 'code',
-      scope: GOOGLE_CONFIG.scope,
+      scope: config.scope,
       access_type: 'offline',
       prompt: 'consent'
     });

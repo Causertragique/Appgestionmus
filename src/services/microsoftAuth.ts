@@ -1,9 +1,9 @@
 // Configuration Microsoft OAuth
-export const MICROSOFT_CONFIG = {
-  clientId: process.env.VITE_MICROSOFT_CLIENT_ID || 'your-microsoft-client-id',
+const config = {
+  clientId: import.meta.env.VITE_MICROSOFT_CLIENT_ID || 'your-microsoft-client-id',
   authority: 'https://login.microsoftonline.com/common',
-  redirectUri: `${window.location.origin}/auth/microsoft/callback`,
-  scopes: ['openid', 'profile', 'email', 'User.Read']
+  redirectUri: window.location.origin + '/auth/microsoft/callback',
+  scope: 'openid profile email',
 };
 
 // Interface pour la réponse Microsoft
@@ -77,16 +77,16 @@ export class MicrosoftAuthService {
    */
   private buildAuthUrl(): string {
     const params = new URLSearchParams({
-      client_id: MICROSOFT_CONFIG.clientId,
+      client_id: config.clientId,
       response_type: 'code',
-      redirect_uri: MICROSOFT_CONFIG.redirectUri,
-      scope: MICROSOFT_CONFIG.scopes.join(' '),
+      redirect_uri: config.redirectUri,
+      scope: config.scope,
       response_mode: 'query',
       state: this.generateState(),
       prompt: 'select_account'
     });
 
-    return `${MICROSOFT_CONFIG.authority}/oauth2/v2.0/authorize?${params.toString()}`;
+    return `${config.authority}/oauth2/v2.0/authorize?${params.toString()}`;
   }
 
   /**
