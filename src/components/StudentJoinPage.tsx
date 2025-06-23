@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+// import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../config/firebase';
+// import { auth, db } from '../config/firebase';
+import { db } from '../config/firebase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { User, Lock, Mail, UserCheck, AlertCircle, CheckCircle } from 'lucide-react';
 import Logo from './Logo';
@@ -76,22 +77,22 @@ export default function StudentJoinPage() {
 
     try {
       // Créer le compte utilisateur
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      // const userCredential = await createUserWithEmailAndPassword(
+      //   auth,
+      //   formData.email,
+      //   formData.password
+      // );
 
-      const user = userCredential.user;
+      // const user = userCredential.user;
 
       // Mettre à jour le profil avec le nom
-      await updateProfile(user, {
-        displayName: `${formData.firstName} ${formData.lastName}`
-      });
+      // await updateProfile(user, {
+      //   displayName: `${formData.firstName} ${formData.lastName}`
+      // });
 
       // Créer le document utilisateur dans Firestore
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
+      await setDoc(doc(db, 'users', 'user-uid'), {
+        uid: 'user-uid',
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,

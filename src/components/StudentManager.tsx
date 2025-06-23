@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Users, Edit, Trash2, UserPlus, User, Search, Mail, Music2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { format } from 'date-fns';
+import { validateStudentData, sanitizeString, secureLog, checkRateLimit } from '../utils/security';
 
 interface StudentManagerProps {
   selectedGroupId?: string;
@@ -13,7 +14,7 @@ export default function StudentManager({ selectedGroupId }: StudentManagerProps)
   const [searchTerm, setSearchTerm] = useState('');
   const [editingStudent, setEditingStudent] = useState<string | null>(null);
   const { user } = useAuth();
-  const { groups, users, getStudentsByGroup, getActiveGroups } = useData();
+  const { groups, users, getStudentsByGroup, getActiveGroups, addUser, addStudentToGroup } = useData();
 
   // Utiliser la fonction getActiveGroups pour filtrer les groupes
   const teacherGroups = getActiveGroups(user?.id || '');
@@ -33,21 +34,58 @@ export default function StudentManager({ selectedGroupId }: StudentManagerProps)
     (student.instrument && student.instrument.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleCreateStudent = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateStudent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Rate limiting
+    if (!checkRateLimit('create-student', 5, 60000)) {
+      alert('Trop de tentatives de création. Veuillez attendre un moment.');
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
     
-    // In a real app, this would create a new student
-    console.log('Creating student:', {
-      firstName: formData.get('firstName'),
-      lastName: formData.get('lastName'),
-      email: formData.get('email'),
-      instrument: formData.get('instrument'),
-      groupId: selectedGroupId || formData.get('groupId')
-    });
+    const newStudent = {
+      firstName: sanitizeString(formData.get('firstName') as string),
+      lastName: sanitizeString(formData.get('lastName') as string),
+      email: sanitizeString(formData.get('email') as string),
+      instrument: sanitizeString(formData.get('instrument') as string),
+      role: 'student' as const,
+      groupId: selectedGroupId || (formData.get('groupId') as string) || undefined
+    };
 
-    setShowCreateForm(false);
-    e.currentTarget.reset();
+    // Validation des données
+    const validation = validateStudentData(newStudent);
+    if (!validation.isValid) {
+      alert(`Erreurs de validation:\n${validation.errors.join('\n')}`);
+      return;
+    }
+
+    try {
+      secureLog('info', 'Tentative de création d\'élève', { email: newStudent.email, instrument: newStudent.instrument });
+      
+      // Ajouter l'élève à la base de données et récupérer son ID
+      const studentId = await addUser(newStudent);
+
+      // Si un groupe est sélectionné, ajouter l'élève au groupe
+      if (newStudent.groupId) {
+        await addStudentToGroup(studentId, newStudent.groupId);
+      }
+
+      setShowCreateForm(false);
+      
+      // Réinitialiser le formulaire de manière sécurisée
+      if (e.currentTarget) {
+        e.currentTarget.reset();
+      }
+      
+      secureLog('info', 'Élève créé avec succès', { studentId, email: newStudent.email });
+      alert(`Élève ${newStudent.firstName} ${newStudent.lastName} ajouté avec succès !`);
+    } catch (error) {
+      secureLog('error', 'Erreur lors de la création de l\'élève', { error, email: newStudent.email });
+      console.error('Erreur lors de la création de l\'élève:', error);
+      alert('Erreur lors de la création de l\'élève. Veuillez réessayer.');
+    }
   };
 
   const getStudentGroups = (studentId: string) => {

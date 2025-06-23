@@ -1,18 +1,39 @@
 import React from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import TeacherDashboard from './components/TeacherDashboard';
 import LoginPage from './components/LoginPage';
+import MusiqueConnectHome from './components/MusiqueConnectHome';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 
-function AppContent() {
+function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-
+  const location = useLocation();
   if (!user) {
-    return <LoginPage />;
+    // Si pas connecté, redirige vers /login
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
+  return <>{children}</>;
+}
 
-  return <TeacherDashboard />;
+function AppRoutes() {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  return (
+    <Routes>
+      <Route path="/" element={user ? <Navigate to="/app" replace /> : <MusiqueConnectHome />} />
+      <Route path="/login" element={user ? <Navigate to="/app" replace /> : <LoginPage />} />
+      <Route path="/app" element={
+        <PrivateRoute>
+          <TeacherDashboard />
+        </PrivateRoute>
+      } />
+      {/* Redirection catch-all vers la landing */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
 
 function App() {
@@ -20,7 +41,7 @@ function App() {
     <SettingsProvider>
       <AuthProvider>
         <DataProvider>
-          <AppContent />
+          <AppRoutes />
         </DataProvider>
       </AuthProvider>
     </SettingsProvider>

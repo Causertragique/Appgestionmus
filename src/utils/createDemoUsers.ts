@@ -1,5 +1,5 @@
-import { auth } from '../config/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+// import { auth } from '../config/firebase';
+// import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { User } from '../types';
@@ -78,41 +78,26 @@ export async function createDemoUsers() {
     try {
       console.log(`📝 Création de ${userData.firstName} ${userData.lastName}...`);
       
-      // Créer l'utilisateur dans Firebase Auth
-      const result = await createUserWithEmailAndPassword(
-        auth, 
-        userData.email, 
-        userData.password
-      );
-      
-      // Mettre à jour le profil Firebase
-      await updateProfile(result.user, {
-        displayName: `${userData.firstName} ${userData.lastName}`,
-        photoURL: userData.picture
-      });
+      // Créer l'utilisateur directement dans Firestore (sans Firebase Auth)
+      const userId = userData.id || `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       // Créer l'utilisateur dans Firestore
       const user: User = {
-        id: result.user.uid,
+        id: userId,
         firstName: userData.firstName,
         lastName: userData.lastName,
         email: userData.email,
         role: userData.role,
         instrument: userData.instrument,
         groupId: userData.groupId || '',
-        picture: userData.picture,
-        isActive: userData.isActive || false
+        picture: userData.picture
       };
       
-      await setDoc(doc(db, 'users', result.user.uid), user);
+      await setDoc(doc(db, 'users', userId), user);
       
-      console.log(`✅ Utilisateur créé: ${userData.firstName} ${userData.lastName} (${result.user.uid})`);
+      console.log(`✅ Utilisateur créé: ${userData.firstName} ${userData.lastName} (${userId})`);
     } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        console.log(`⚠️ Utilisateur déjà existant: ${userData.email}`);
-      } else {
-        console.error(`❌ Erreur lors de la création de ${userData.firstName}:`, error);
-      }
+      console.error(`❌ Erreur lors de la création de ${userData.firstName}:`, error);
     }
   }
   

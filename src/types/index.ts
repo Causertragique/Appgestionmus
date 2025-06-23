@@ -3,10 +3,13 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
-  role: 'teacher' | 'student';
+  role: 'teacher' | 'student' | 'admin';
   groupId?: string;
   instrument?: string;
   picture?: string;
+  schoolId?: string;
+  schoolDomain?: string;
+  subscriptionPlan?: 'basic' | 'premium' | 'enterprise';
 }
 
 export interface Group {
@@ -16,6 +19,8 @@ export interface Group {
   teacherId: string;
   studentIds: string[];
   createdAt: Date;
+  invitationCode?: string;
+  qrCodeUrl?: string;
 }
 
 export interface Homework {
@@ -148,4 +153,22 @@ export interface StudentDebt {
   studentId: string;
   totalDebt: number;
   purchases: Purchase[];
+}
+
+export interface PartnerSchool {
+  id: string;
+  name: string;
+  domain: string;
+  address: string;
+  city: string;
+  province: string;
+  contactEmail: string;
+  contactPhone: string;
+  subscriptionPlan: 'basic' | 'premium' | 'enterprise';
+  maxStudents: number;
+  maxTeachers: number;
+  features: string[];
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

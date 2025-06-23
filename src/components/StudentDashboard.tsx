@@ -44,6 +44,7 @@ import { format, isAfter, isBefore, addDays, startOfMonth, endOfMonth, isWithinI
 import StudentProfile from './StudentProfile';
 import StudentChat from './StudentChat';
 import StudentFinance from './StudentFinance';
+import RoleSwitcher from './RoleSwitcher';
 
 type TabType = 'homework' | 'messages' | 'announcements' | 'profile' | 'finance';
 

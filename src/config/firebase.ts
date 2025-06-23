@@ -18,7 +18,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore Database
 export const db = getFirestore(app);
 
-// Initialize Firebase Authentication
+// Initialize Firebase Authentication (pour Google uniquement)
 export const auth = getAuth(app);
 
 // Firebase App Check (optionnel - décommentez si nécessaire)

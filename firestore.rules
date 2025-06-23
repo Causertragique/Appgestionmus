@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Utilisateurs peuvent lire/écrire leurs propres données
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && 
+        (request.auth.token.role == 'admin' || 
+         request.auth.token.role == 'teacher');
+    }
+    
+    // Groupes - enseignants peuvent gérer leurs groupes
+    match /groups/{groupId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        request.auth.uid in resource.data.studentIds;
+    }
+    
+    // Élèves - enseignants peuvent gérer leurs élèves
+    match /students/{studentId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        request.auth.uid == studentId;
+    }
+    
+    // Devoirs - enseignants et élèves concernés
+    match /homework/{homeworkId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        request.auth.uid in resource.data.group.studentIds;
+    }
+    
+    // Soumissions de devoirs
+    match /homeworkSubmissions/{submissionId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.studentId == request.auth.uid ||
+         resource.data.teacherId == request.auth.uid ||
+         request.auth.token.role == 'admin');
+    }
+    
+    // Assignations
+    match /assignments/{assignmentId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        request.auth.uid in resource.data.assignedStudentIds;
+    }
+    
+    // Soumissions d'assignations
+    match /assignmentSubmissions/{submissionId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.studentId == request.auth.uid ||
+         resource.data.teacherId == request.auth.uid ||
+         request.auth.token.role == 'admin');
+    }
+    
+    // Notes de cours
+    match /courseNotes/{noteId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        request.auth.uid in resource.data.group.studentIds;
+    }
+    
+    // Messages et chat
+    match /messages/{messageId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.senderId == request.auth.uid ||
+         resource.data.receiverId == request.auth.uid ||
+         request.auth.uid in resource.data.group.studentIds ||
+         resource.data.teacherId == request.auth.uid ||
+         request.auth.token.role == 'admin');
+    }
+    
+    // Annonces
+    match /announcements/{announcementId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        request.auth.uid in resource.data.group.studentIds;
+    }
+    
+    // Achats et finances
+    match /purchases/{purchaseId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        resource.data.studentId == request.auth.uid;
+    }
+    
+    // Dettes d'élèves
+    match /studentDebts/{debtId} {
+      allow read, write: if request.auth != null && 
+        (resource.data.teacherId == request.auth.uid || 
+         request.auth.token.role == 'admin');
+      allow read: if request.auth != null && 
+        resource.data.studentId == request.auth.uid;
+    }
+    
+    // Écoles partenaires (lecture seule pour tous les utilisateurs authentifiés)
+    match /partnerSchools/{schoolId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.token.role == 'admin';
+    }
+    
+    // Configuration de domaine
+    match /domainConfigs/{domainId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        request.auth.token.role == 'admin';
+    }
+    
+    // Règles par défaut - refuser l'accès
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

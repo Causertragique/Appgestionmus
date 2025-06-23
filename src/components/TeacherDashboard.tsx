@@ -36,7 +36,9 @@ import {
   LineChart,
   Package,
   Brain,
-  Lightbulb
+  Lightbulb,
+  Database,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
@@ -64,8 +66,11 @@ import Tuner from './Tuner';
 import MacBookChat from './MacBookChat';
 import BudgetExpenseManager from './BudgetExpenseManager';
 import BudgetOverview from './BudgetOverview';
+import RoleSwitcher from './RoleSwitcher';
+import EducrnBanner from './EducrnBanner';
+import GoogleSheetsSync from './GoogleSheetsSync';
 
-type TabType = 'homework' | 'messages' | 'announcements' | 'profile' | 'groups' | 'students' | 'assignments' | 'notes' | 'finance' | 'inventory' | 'sales' | 'fournitures' | 'evenements' | 'reparations' | 'specialistes' | 'licenses' | 'gamification' | 'ia-quebec' | 'tools' | 'macbook-chat' | 'overview' | 'ia';
+type TabType = 'homework' | 'messages' | 'announcements' | 'profile' | 'groups' | 'students' | 'assignments' | 'notes' | 'finance' | 'inventory' | 'sales' | 'fournitures' | 'evenements' | 'reparations' | 'specialistes' | 'licenses' | 'gamification' | 'ia-quebec' | 'tools' | 'macbook-chat' | 'overview' | 'ia' | 'google-sheets' | 'share-code';
 
 interface CalendarEvent {
   type: string;
@@ -80,7 +85,7 @@ export default function TeacherDashboard() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [toolView, setToolView] = useState<'metronome' | 'tuner'>('metronome');
   const { user, logout } = useAuth();
-  const { groups, homework, messages, announcements, assignments, courseNotes, purchases, getStudentsByGroup } = useData();
+  const { groups, homework, messages, announcements, assignments, courseNotes, purchases, getStudentsByGroup, loading } = useData();
   const { resetSettings } = useSettings();
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -95,6 +100,9 @@ export default function TeacherDashboard() {
   const [gamificationChallengeDescription, setGamificationChallengeDescription] = useState('');
   const [isInitializingData, setIsInitializingData] = useState(false);
   const [showContentModal, setShowContentModal] = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState('');
 
   const teacherGroups = groups.filter(group => group.teacherId === user?.id);
   const selectedGroup = selectedGroupId ? groups.find(g => g.id === selectedGroupId) : null;
@@ -196,7 +204,7 @@ export default function TeacherDashboard() {
       };
 
       // Simuler la création des données (en mode test)
-      console.log('🔄 Initialisation des données de test...');
+      console.log('Initialisation des données de test...');
       
       // Ajouter les élèves au groupe
       const updatedGroup = {
@@ -238,6 +246,7 @@ export default function TeacherDashboard() {
   };
 
   const renderTabContent = () => {
+    console.log('Active tab:', activeTab); // Debug
     switch (activeTab) {
       case 'homework':
         return <HomeworkManager selectedGroupId={selectedGroupId} />;
@@ -262,12 +271,7 @@ export default function TeacherDashboard() {
       case 'overview':
         return <BudgetOverview />;
       case 'fournitures':
-        return <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Gestion des Fournitures</h2>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            {/* Contenu de la section des fournitures */}
-          </div>
-        </div>;
+        return <BudgetExpenseManager />;
       case 'evenements':
         return <div className="p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Gestion des Événements</h2>
@@ -357,6 +361,8 @@ export default function TeacherDashboard() {
         </div>;
       case 'gamification':
         return <GamificationManager viewMode={viewMode} setViewMode={setViewMode} />;
+      case 'ia':
+        return <IA />;
       case 'ia-quebec':
         return <IAToolsManager />;
       case 'tools':
@@ -401,6 +407,61 @@ export default function TeacherDashboard() {
         );
       case 'macbook-chat':
         return <MacBookChat />;
+      case 'google-sheets':
+        return <GoogleSheetsSync />;
+      case 'share-code':
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Partager MusiqueConnect</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="text-center">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Code QR de Partage</h3>
+                  <p className="text-gray-600 mb-4">
+                    Scannez ce code QR pour partager MusiqueConnect avec vos collègues
+                  </p>
+                </div>
+                
+                {/* Code QR simulé */}
+                <div className="inline-block p-4 bg-white border-2 border-gray-300 rounded-lg mb-6">
+                  <div className="w-48 h-48 bg-gray-100 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-32 h-32 bg-black mx-auto mb-2"></div>
+                      <p className="text-xs text-gray-500">Code QR MusiqueConnect</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 mb-2">Lien de Partage</h4>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value="https://musiqueconnect.ca/join/ABC123"
+                        readOnly
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm"
+                      />
+                      <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm">
+                        Copier
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-green-900 mb-2">Code d'Invitation</h4>
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-green-600 mb-2">ABC-123</div>
+                      <p className="text-sm text-green-700">
+                        Partagez ce code avec vos collègues pour qu'ils rejoignent MusiqueConnect
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -485,7 +546,7 @@ export default function TeacherDashboard() {
   };
 
   // Vérifier si l'utilisateur a les permissions d'accès
-  if (!user || user.role !== 'teacher') {
+  if (!user || (user.role !== 'teacher' && user.role !== 'admin')) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-md w-full">
@@ -495,7 +556,7 @@ export default function TeacherDashboard() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Accès refusé</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Vous devez être connecté en tant que professeur pour accéder à cette page.
+              Vous devez être connecté en tant que professeur ou administrateur pour accéder à cette page.
             </p>
             <button
               onClick={logout}
@@ -510,44 +571,87 @@ export default function TeacherDashboard() {
     );
   }
 
+  // Vérifier si Firebase est configuré
+  const isFirebaseConfigured = () => {
+    const firebaseConfig = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    };
+    return firebaseConfig.apiKey && firebaseConfig.apiKey !== 'test-api-key';
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gray-50">
-        {/* En-tête */}
+        {/* Message d'information Firebase */}
+        {!isFirebaseConfigured() && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  <strong>Mode Développement :</strong> Firebase n'est pas configuré. 
+                  Les données sont stockées en mémoire et seront perdues lors du rechargement de la page.
+                  <br />
+                  <a 
+                    href="SETUP_FIREBASE_RAPIDE.md" 
+                    target="_blank" 
+                    className="underline font-medium"
+                  >
+                    Cliquez ici pour configurer Firebase
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
         <header className="bg-white shadow-sm border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-right gap-4">
-                {user?.picture ? (
-                  <img
-                    src={user.picture}
-                    alt="Photo de profil"
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500"
-                  />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <User className="w-6 h-6 text-blue-600" />
-                  </div>
-                )}
-                <div>
-                  <h1 className="text-lg font-semibold text-gray-900">
-                    {user?.firstName} {user?.lastName}
-                  </h1>
-                  <p className="text-sm text-gray-600">Professeur de Musique</p>
+            <div className="flex justify-between items-center py-4">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <h1 className="text-2xl font-bold text-gray-900">MusiqueConnect</h1>
                 </div>
               </div>
+              
               <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    </span>
+                  </div>
+                  <div className="text-sm">
+                    <p className="text-gray-900 font-medium">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-gray-500">Enseignant</p>
+                  </div>
+                </div>
+                
                 <button
                   onClick={logout}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-grey  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                  title="Se déconnecter"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Déconnexion
+                  <LogOut className="w-5 h-5" />
                 </button>
               </div>
             </div>
           </div>
         </header>
+        
+        {/* Bannière pour les utilisateurs educrn.ca */}
+        <EducrnBanner />
+        
+        {/* Sélecteur de rôle pour info@guillaumehetu.com */}
+        <RoleSwitcher />
         
         {/* Menu de budget horizontal */}
         {(activeTab === 'finance' || activeTab === 'overview' || activeTab === 'fournitures' || activeTab === 'evenements' || activeTab === 'reparations' || activeTab === 'specialistes') && (
@@ -775,7 +879,7 @@ export default function TeacherDashboard() {
               >
                 <div className="flex items-center gap-2">
                   <Lightbulb className={`w-4 h-4 ${activeTab === 'ia' ? 'text-white' : 'text-yellow-500'}`} />
-                  <span className="font-medium text-xs">Intelligence Artificielle</span>
+                  <span className="font-medium text-xs">Maestro IA</span>
                 </div>
               </button>
 
@@ -865,7 +969,7 @@ export default function TeacherDashboard() {
                 }}
                 className={`w-full flex items-center justify-between p-2 rounded-lg transition-all duration-200 ${
                   activeTab === 'groups'
-                    ? 'bg-[#1473AA] text-white border border-[#1473AA] shadow-sm'
+                    ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -882,7 +986,7 @@ export default function TeacherDashboard() {
                 }}
                 className={`w-full flex items-center justify-between p-2 rounded-lg transition-all duration-200 ${
                   activeTab === 'students'
-                    ? 'bg-[#1473AA] text-white border border-[#1473AA] shadow-sm'
+                    ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -899,7 +1003,7 @@ export default function TeacherDashboard() {
                 }}
                 className={`w-full flex items-center justify-between p-2 rounded-lg transition-all duration-200 ${
                   activeTab === 'finance'
-                    ? 'bg-[#1473AA] text-white border border-[#1473AA] shadow-sm'
+                    ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                 }`}
               >
@@ -916,47 +1020,47 @@ export default function TeacherDashboard() {
                 }}
                 className={`w-full flex items-center justify-between p-2 rounded-lg transition-all duration-200 ${
                   activeTab === 'sales'
-                    ? 'bg-[#1473AA] text-white border border-[#1473AA] shadow-sm'
+                    ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <ShoppingCart className={`w-4 h-4 ${activeTab === 'sales' ? 'text-white' : 'text-orange-500'}`} />
+                  <DollarSign className={`w-4 h-4 ${activeTab === 'sales' ? 'text-white' : 'text-emerald-500'}`} />
                   <span className="font-medium text-sm">Ventes totales</span>
                 </div>
               </button>
 
               <button
                 onClick={() => {
-                  setActiveTab('inventory');
+                  setActiveTab('google-sheets');
                   setShowContentModal(true);
                 }}
                 className={`w-full flex items-center justify-between p-2 rounded-lg transition-all duration-200 ${
-                  activeTab === 'inventory'
-                    ? 'bg-[#1473AA] text-white border border-[#1473AA] shadow-sm'
+                  activeTab === 'google-sheets'
+                    ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Package className={`w-4 h-4 ${activeTab === 'inventory' ? 'text-white' : 'text-amber-500'}`} />
-                  <span className="font-medium text-sm">Inventaire</span>
+                  <Database className={`w-4 h-4 ${activeTab === 'google-sheets' ? 'text-white' : 'text-green-500'}`} />
+                  <span className="font-medium text-sm">Google Sheets</span>
                 </div>
               </button>
 
               <button
                 onClick={() => {
-                  setActiveTab('profile');
+                  setActiveTab('share-code');
                   setShowContentModal(true);
                 }}
                 className={`w-full flex items-center justify-between p-2 rounded-lg transition-all duration-200 ${
-                  activeTab === 'profile'
-                    ? 'bg-[#1473AA] text-white border border-[#1473AA] shadow-sm'
+                  activeTab === 'share-code'
+                    ? 'bg-blue-600 text-white border border-blue-600 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Settings className={`w-4 h-4 ${activeTab === 'profile' ? 'text-white' : 'text-gray-500'}`} />
-                  <span className="font-medium text-sm">Profil</span>
+                  <Share2 className={`w-4 h-4 ${activeTab === 'share-code' ? 'text-white' : 'text-blue-500'}`} />
+                  <span className="font-medium text-sm">Partager MusiqueConnect</span>
                 </div>
               </button>
             </div>
@@ -990,8 +1094,8 @@ export default function TeacherDashboard() {
 
               {/* Jours de la semaine */}
               <div className="grid grid-cols-7 gap-1 mb-1">
-                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day) => (
-                  <div key={day} className="text-xs text-gray-500 text-center font-medium">
+                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
+                  <div key={`day-${index}`} className="text-xs text-gray-500 text-center font-medium">
                     {day}
                   </div>
                 ))}
@@ -1044,9 +1148,11 @@ export default function TeacherDashboard() {
                   {activeTab === 'finance' && 'Finances'}
                   {activeTab === 'inventory' && 'Inventaire'}
                   {activeTab === 'profile' && 'Profil'}
-                  {activeTab === 'ia' && 'Intelligence Artificielle'}
+                  {activeTab === 'ia' && 'Maestro IA'}
                   {activeTab === 'gamification' && 'Gamification'}
                   {activeTab === 'tools' && 'Outils'}
+                  {activeTab === 'google-sheets' && 'Synchronisation Google Sheets'}
+                  {activeTab === 'share-code' && 'Partager MusiqueConnect'}
                 </h2>
                 <p className="mt-1 text-sm text-gray-500">
                   {activeTab === 'homework' && 'Gérez les pratiques de vos élèves'}
@@ -1059,21 +1165,14 @@ export default function TeacherDashboard() {
                   {activeTab === 'finance' && 'Suivez vos finances et paiements'}
                   {activeTab === 'inventory' && 'Gérez votre inventaire de matériel'}
                   {activeTab === 'profile' && 'Gérez vos informations personnelles'}
-                  {activeTab === 'ia' && 'Outils d\'intelligence artificielle'}
+                  {activeTab === 'ia' && 'Maestro IA'}
                   {activeTab === 'gamification' && 'Système de gamification'}
                   {activeTab === 'tools' && 'Outils pédagogiques'}
+                  {activeTab === 'google-sheets' && 'Synchronisation Google Sheets'}
+                  {activeTab === 'share-code' && 'Partagez MusiqueConnect avec vos collègues'}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setActiveTab('sales');
-                    setShowContentModal(true);
-                  }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Ventes totales
-                </button>
                 <button
                   onClick={() => setShowContentModal(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

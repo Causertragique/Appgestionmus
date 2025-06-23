@@ -28,15 +28,35 @@ export default function GroupManager({ selectedGroupId }: GroupManagerProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    addGroup({
+    // Générer un code d'invitation unique
+    const invitationCode = generateInvitationCode();
+    
+    const newGroup = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
       teacherId: user?.id || '',
-      studentIds: []
-    });
+      studentIds: [],
+      invitationCode: invitationCode,
+      qrCodeUrl: `https://musiqueconnect.ca/join/${invitationCode}`
+    };
+    
+    addGroup(newGroup);
 
     setShowCreateForm(false);
     e.currentTarget.reset();
+    
+    // Afficher le code d'invitation
+    alert(`Groupe créé avec succès !\n\nCode d'invitation: ${invitationCode}\n\nPartagez ce code avec vos élèves pour qu'ils rejoignent le groupe.`);
+  };
+
+  // Fonction pour générer un code d'invitation unique
+  const generateInvitationCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   };
 
   const handleEditGroup = (group: any) => {
@@ -212,6 +232,27 @@ export default function GroupManager({ selectedGroupId }: GroupManagerProps) {
                             Créé le {format(group.createdAt, 'dd MMM yyyy')}
                           </div>
                         </div>
+                        
+                        {/* Code d'invitation */}
+                        {group.invitationCode && (
+                          <div className="mt-4 p-4 bg-[#1473AA]/10 rounded-lg border border-[#1473AA]/20">
+                            <h4 className="font-medium text-[#1473AA] mb-2">Code d'Invitation</h4>
+                            <div className="flex items-center gap-3">
+                              <div className="bg-white px-3 py-2 rounded border text-lg font-mono font-bold text-[#1473AA]">
+                                {group.invitationCode}
+                              </div>
+                              <button
+                                onClick={() => group.invitationCode && navigator.clipboard.writeText(group.invitationCode)}
+                                className="px-3 py-2 bg-[#1473AA] text-white rounded hover:bg-[#1473AA]/80 text-sm"
+                              >
+                                Copier
+                              </button>
+                            </div>
+                            <p className="text-xs text-[#1473AA]/80 mt-2">
+                              Partagez ce code avec vos élèves pour qu'ils rejoignent le groupe
+                            </p>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
