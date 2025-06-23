@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User } from '../types';
 
 interface CreateAccountData {
@@ -64,8 +64,21 @@ const mockUsers: User[] = [
 ];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    // Restaurer l'utilisateur depuis le localStorage au démarrage
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
   const [users, setUsers] = useState<User[]>(mockUsers);
+
+  // Sauvegarder l'utilisateur dans le localStorage quand il change
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
+  }, [user]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Authentification fictive
@@ -168,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('user');
   };
 
   const updateProfile = (profileData: Partial<User>) => {

@@ -411,4 +411,92 @@ export const purchaseService = {
       paidAt: serverTimestamp()
     });
   }
+};
+
+// Service pour les notifications
+export const notificationService = {
+  async createNotification(notificationData: {
+    recipientId: string;
+    type: string;
+    title: string;
+    message: string;
+    recipientRole: string;
+    relatedId?: string;
+    priority?: string;
+  }): Promise<string> {
+    const docRef = await addDoc(collection(db, 'notifications'), {
+      ...notificationData,
+      isRead: false,
+      createdAt: serverTimestamp()
+    });
+    return docRef.id;
+  },
+
+  async getUnreadCount(userId: string): Promise<number> {
+    const q = query(
+      collection(db, 'notifications'),
+      where('recipientId', '==', userId),
+      where('isRead', '==', false)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.size;
+  },
+
+  async markAsRead(notificationId: string): Promise<void> {
+    const docRef = doc(db, 'notifications', notificationId);
+    await updateDoc(docRef, {
+      isRead: true,
+      readAt: serverTimestamp()
+    });
+  }
+};
+
+// Service pour les produits (simulation pour éviter les erreurs)
+export const productService = {
+  async getProducts(): Promise<any[]> {
+    // Simulation de données de produits
+    return [
+      {
+        id: '1',
+        name: 'Cordes de violon',
+        currentPrice: 25.99,
+        stockQuantity: 50,
+        minStockLevel: 10,
+        categoryId: 'strings',
+        isActive: true
+      },
+      {
+        id: '2',
+        name: 'Anches de clarinette',
+        currentPrice: 15.50,
+        stockQuantity: 30,
+        minStockLevel: 5,
+        categoryId: 'reeds',
+        isActive: true
+      }
+    ];
+  },
+
+  async getProductCategories(): Promise<any[]> {
+    return [
+      { id: 'strings', name: 'Cordes' },
+      { id: 'reeds', name: 'Anches' },
+      { id: 'accessories', name: 'Accessoires' }
+    ];
+  },
+
+  async getSales(teacherId?: string): Promise<any[]> {
+    return [];
+  },
+
+  async recordSale(saleData: any): Promise<boolean> {
+    // Simulation d'enregistrement de vente
+    console.log('Vente enregistrée:', saleData);
+    return true;
+  },
+
+  async initializeProducts(): Promise<boolean> {
+    // Simulation d'initialisation
+    return true;
+  }
 }; 
