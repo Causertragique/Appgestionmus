@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { User, Camera, Save, X, Settings } from 'lucide-react';
+import { User, Camera, Save, X, Settings, Shield, Phone } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AppSettings from './AppSettings';
+import { getAuth, PhoneAuthProvider, multiFactor, RecaptchaVerifier } from 'firebase/auth';
 
 export default function TeacherProfile() {
   const { user, updateProfile } = useAuth();
@@ -41,6 +42,55 @@ export default function TeacherProfile() {
       reader.readAsDataURL(file);
     }
   };
+
+  // --- Double authentification MFA ---
+  async function handleEnableMFA() {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        alert("Utilisateur non connecté.");
+        return;
+      }
+
+      // @ts-ignore
+      if (!window.recaptchaVerifier) {
+        // @ts-ignore
+        window.recaptchaVerifier = new RecaptchaVerifier('recaptcha-container', {
+          'size': 'invisible'
+        }, auth);
+      }
+
+      const phoneNumber = prompt("Entrez votre numéro de téléphone (ex: +15145551234)");
+      if (!phoneNumber) {
+        alert("Numéro de téléphone requis.");
+        return;
+      }
+
+      // @ts-ignore - Utilisation de l'API Firebase MFA
+      const session = await multiFactor(user).getSession();
+      const phoneAuthProvider = new PhoneAuthProvider(auth);
+      const verificationId = await phoneAuthProvider.verifyPhoneNumber(
+        { phoneNumber, session },
+        // @ts-ignore
+        window.recaptchaVerifier
+      );
+
+      const verificationCode = prompt("Entrez le code reçu par SMS");
+      if (!verificationCode) {
+        alert("Code requis.");
+        return;
+      }
+
+      const cred = PhoneAuthProvider.credential(verificationId, verificationCode);
+      // @ts-ignore - Enroll avec credential
+      await multiFactor(user).enroll(cred, "Téléphone principal");
+      alert("Multi-facteur activé avec succès !");
+    } catch (error) {
+      console.error('Erreur MFA:', error);
+      alert("Erreur lors de l'activation du MFA. Vérifiez votre numéro de téléphone.");
+    }
+  }
 
   if (!user) return null;
 
@@ -92,7 +142,7 @@ export default function TeacherProfile() {
 
       {/* Contenu des sections */}
       {activeSection === 'profile' && (
-        <div className="card">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           {isEditing ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Photo de profil */}
@@ -133,7 +183,7 @@ export default function TeacherProfile() {
                     id="firstName"
                     value={formData.firstName}
                     onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                    className="input"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -146,7 +196,7 @@ export default function TeacherProfile() {
                     id="lastName"
                     value={formData.lastName}
                     onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                    className="input"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -161,20 +211,20 @@ export default function TeacherProfile() {
                   id="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="input"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   required
                 />
               </div>
 
               <div className="flex gap-3">
-                <button type="submit" className="btn-primary flex items-center gap-2">
+                <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 flex items-center gap-2">
                   <Save className="w-4 h-4" />
                   Sauvegarder
                 </button>
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="btn-outline flex items-center gap-2"
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 flex items-center gap-2"
                 >
                   <X className="w-4 h-4" />
                   Annuler
@@ -198,45 +248,43 @@ export default function TeacherProfile() {
                 </div>
               </div>
 
-              {/* Informations personnelles */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Informations affichées */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Prénom</h3>
-                  <p className="text-lg text-gray-900">{user.firstName}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Prénom</label>
+                  <p className="text-gray-900">{user.firstName}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Nom de famille</h3>
-                  <p className="text-lg text-gray-900">{user.lastName}</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nom de famille</label>
+                  <p className="text-gray-900">{user.lastName}</p>
                 </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Adresse e-mail</h3>
-                  <p className="text-lg text-gray-900">{user.email}</p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Rôle</h3>
-                  <p className="text-lg text-gray-900">Professeur de Musique</p>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Adresse e-mail</label>
+                  <p className="text-gray-900">{user.email}</p>
                 </div>
               </div>
 
-              {/* Statistiques professeur */}
+              {/* Section Sécurité */}
               <div className="border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Statistiques d'Enseignement</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">0</div>
-                    <div className="text-sm text-blue-600">Groupes Actifs</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">0</div>
-                    <div className="text-sm text-green-600">Élèves Total</div>
-                  </div>
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">0</div>
-                    <div className="text-sm text-purple-600">Pratiques Assignées</div>
-                  </div>
-                  <div className="text-center p-4 bg-orange-50 rounded-lg">
-                    <div className="text-2xl font-bold text-orange-600">0</div>
-                    <div className="text-sm text-orange-600">Messages Envoyés</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Sécurité
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-5 h-5 text-gray-600" />
+                      <div>
+                        <h4 className="font-medium text-gray-900">Double authentification (MFA)</h4>
+                        <p className="text-sm text-gray-600">Sécurisez votre compte avec un code SMS</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleEnableMFA}
+                      className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 text-sm"
+                    >
+                      Activer
+                    </button>
                   </div>
                 </div>
               </div>
@@ -246,10 +294,11 @@ export default function TeacherProfile() {
       )}
 
       {activeSection === 'settings' && (
-        <div className="card">
-          <AppSettings userRole="teacher" />
-        </div>
+        <AppSettings userRole="teacher" />
       )}
+
+      {/* Container pour reCAPTCHA */}
+      <div id="recaptcha-container"></div>
     </div>
   );
 }

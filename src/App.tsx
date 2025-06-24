@@ -2,7 +2,9 @@ import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import TeacherDashboard from './components/TeacherDashboard';
 import LoginPage from './components/LoginPage';
+import SignupPage from './components/SignupPage';
 import MusiqueConnectHome from './components/MusiqueConnectHome';
+import PricingPage from '../stripe/PricingPage';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
@@ -25,6 +27,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={user ? <Navigate to="/app" replace /> : <MusiqueConnectHome />} />
       <Route path="/login" element={user ? <Navigate to="/app" replace /> : <LoginPage />} />
+      <Route path="/signup" element={user ? <Navigate to="/app" replace /> : <SignupPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/app" element={
         <PrivateRoute>
           <TeacherDashboard />

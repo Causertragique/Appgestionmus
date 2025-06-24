@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { Music, Users, BookOpen, Brain, BarChart3, Shield, Zap, Star, Globe, ArrowRight } from 'lucide-react';
-import logo from '../../public/logos/brand-primary.png';
-import logoGuillaumeHetu from '../../public/logos/guillaumehetu.png';
+const logo = '/logos/brand-primary.png';
+const logoGuillaumeHetu = '/logos/guillaumehetu.png';
 
 export default function MusiqueConnectHome() {
   const [isLoading, setIsLoading] = useState(false);
-  const { loginWithDomain } = useAuth();
 
   const handleQuickStart = async () => {
     setIsLoading(true);
     try {
-      await loginWithDomain('musiqueconnect.app');
+      // Rediriger vers la page d'inscription
+      window.location.href = `https://musiqueconnect.app/signup?domain=musiqueconnect.app`;
     } catch (error) {
-      console.error('Erreur lors de la connexion:', error);
+      console.error('Erreur lors de la redirection:', error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLogin = () => {
+    // Rediriger vers la page de connexion
+    window.location.href = 'https://musiqueconnect.app/login';
+  };
+
+  const handlePricing = () => {
+    // Rediriger vers la page de pricing
+    window.location.href = 'https://musiqueconnect.app/pricing';
   };
 
   const features = [
@@ -96,17 +105,23 @@ export default function MusiqueConnectHome() {
               <img src={logo} alt="MusiqueConnect" className="h-10" />
               <h1 className="text-2xl font-bold text-white">MusiqueConnect</h1>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-6 items-center">
+              <button
+                onClick={handlePricing}
+                className="text-white font-medium hover:text-white/80 transition-colors"
+              >
+                Prix
+              </button>
               <button
                 onClick={handleQuickStart}
                 disabled={isLoading}
-                className="bg-white text-[#1473AA] px-6 py-2 rounded-lg font-medium hover:bg-[#e6f0f7] focus:ring-2 focus:ring-white focus:ring-offset-2 disabled:opacity-50 transition-colors shadow-md"
+                className="text-white font-medium hover:text-white/80 transition-colors"
               >
-                {isLoading ? 'Connexion...' : 'Démarrer'}
+                {isLoading ? 'Redirection...' : 'Inscription'}
               </button>
               <button
-                onClick={() => window.location.href = '/login'}
-                className="ml-2 px-6 py-2 rounded-lg border border-white text-white font-medium hover:bg-[#125e8c] transition-colors shadow-md"
+                onClick={handleLogin}
+                className="bg-white text-[#1473AA] px-6 py-2 rounded-lg font-medium hover:bg-[#e6f0f7] focus:ring-2 focus:ring-white focus:ring-offset-2 transition-colors shadow-md"
               >
                 Connexion
               </button>
@@ -146,8 +161,11 @@ export default function MusiqueConnectHome() {
                 </div>
               )}
             </button>
-            <button className="border border-white text-white px-8 py-3 rounded-full font-bold text-base shadow hover:bg-[#125e8c] focus:ring-2 focus:ring-white focus:ring-offset-2 transition-colors">
-              Voir la Démo
+            <button 
+              onClick={handlePricing}
+              className="border border-white text-white px-8 py-3 rounded-full font-bold text-base shadow hover:bg-[#125e8c] focus:ring-2 focus:ring-white focus:ring-offset-2 transition-colors"
+            >
+              Voir les Prix
             </button>
           </div>
         </div>

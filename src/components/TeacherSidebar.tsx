@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Users, Music, MessageSquare, Megaphone, LogOut, Settings, UserPlus, BookOpen, FileText, DollarSign, Home, ChevronDown, BarChart2, Wrench, LayoutDashboard, Brain
+  Users, Music, MessageSquare, Megaphone, LogOut, Settings, UserPlus, BookOpen, FileText, DollarSign, Home, ChevronDown, BarChart2, Wrench, LayoutDashboard, Brain, User
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
@@ -20,8 +20,8 @@ const TABS = [
   { id: 'finance', label: 'Finance', icon: DollarSign },
   { id: 'tools', label: 'Outils', icon: Wrench },
   { id: 'ai', label: 'Intelligence Artificielle', icon: Brain },
-  { id: 'settings', label: 'Paramètres', icon: Settings },
-  { id: 'profile', label: 'Profil', icon: Settings }
+  { id: 'profile', label: 'Profil', icon: User },
+  { id: 'settings', label: 'Paramètres', icon: Settings }
 ];
 
 const TeacherSidebar = ({ activeTab, setActiveTab, selectedGroupId, setSelectedGroupId }: { 
