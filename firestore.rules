@@ -1,134 +1,131 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Utilisateurs peuvent lire/écrire leurs propres données
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow read: if request.auth != null && 
-        (request.auth.token.role == 'admin' || 
-         request.auth.token.role == 'teacher');
+
+    // === Common Role Checks ===
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+    function isTeacher() {
+      return isAuthenticated() && request.auth.token.role == 'teacher';
+    }
+    function isStudent(studentId) {
+      return isAuthenticated() && request.auth.uid == studentId;
     }
 
-    // Groupes - enseignants peuvent gérer leurs groupes
-    // (other rules continue here...)
-  }
-}
-    
-    // Groupes - enseignants peuvent gérer leurs groupes
+    // === Users: Users can only read/write their own data. Admins/teachers can read all. ===
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAdmin() || isTeacher();
+    }
+
+    // === Groups: Teachers manage their groups, students read their own groups, admins full access ===
     match /groups/{groupId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
-        request.auth.uid in resource.data.studentIds;
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.studentIds;
     }
-    
-    // Élèves - enseignants peuvent gérer leurs élèves
+
+    // === Students: Teachers manage, students read/write their own, admins full access ===
     match /students/{studentId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
-        request.auth.uid == studentId;
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isStudent(studentId);
     }
-    
-    // Devoirs - enseignants et élèves concernés
+
+    // === Homework: Teachers/admins manage, students in group can read ===
     match /homework/{homeworkId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && 
         request.auth.uid in resource.data.group.studentIds;
     }
-    
-    // Soumissions de devoirs
+
+    // === Homework Submissions: Only involved student, teacher, and admin ===
     match /homeworkSubmissions/{submissionId} {
-      allow read, write: if request.auth != null && 
+      allow read, write: if isAuthenticated() &&
         (resource.data.studentId == request.auth.uid ||
          resource.data.teacherId == request.auth.uid ||
-         request.auth.token.role == 'admin');
+         isAdmin());
     }
-    
-    // Assignations
+
+    // === Assignments: Teachers/admins manage, assigned students can read ===
     match /assignments/{assignmentId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && 
         request.auth.uid in resource.data.assignedStudentIds;
     }
-    
-    // Soumissions d'assignations
+
+    // === Assignment Submissions: Only involved student, teacher, and admin ===
     match /assignmentSubmissions/{submissionId} {
-      allow read, write: if request.auth != null && 
+      allow read, write: if isAuthenticated() &&
         (resource.data.studentId == request.auth.uid ||
          resource.data.teacherId == request.auth.uid ||
-         request.auth.token.role == 'admin');
+         isAdmin());
     }
-    
-    // Notes de cours
+
+    // === Course Notes: Teachers/admins manage, group students can read ===
     match /courseNotes/{noteId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && 
         request.auth.uid in resource.data.group.studentIds;
     }
-    
-    // Messages et chat
+
+    // === Messages: Sender, receiver, group members, teacher, and admin ===
     match /messages/{messageId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.senderId == request.auth.uid ||
-         resource.data.receiverId == request.auth.uid ||
-         request.auth.uid in resource.data.group.studentIds ||
-         resource.data.teacherId == request.auth.uid ||
-         request.auth.token.role == 'admin');
+      allow read, write: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid ||
+        request.auth.uid in resource.data.group.studentIds ||
+        resource.data.teacherId == request.auth.uid ||
+        isAdmin()
+      );
     }
-    
-    // Annonces
+
+    // === Announcements: Teachers/admins manage, group students can read ===
     match /announcements/{announcementId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && 
         request.auth.uid in resource.data.group.studentIds;
     }
-    
-    // Achats et finances
+
+    // === Purchases: Teachers/admins manage, student can read ===
     match /purchases/{purchaseId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && 
         resource.data.studentId == request.auth.uid;
     }
-    
-    // Dettes d'élèves
+
+    // === Student Debts: Teachers/admins manage, student can read ===
     match /studentDebts/{debtId} {
-      allow read, write: if request.auth != null && 
-        (resource.data.teacherId == request.auth.uid || 
-         request.auth.token.role == 'admin');
-      allow read: if request.auth != null && 
+      allow read, write: if isAuthenticated() && 
+        (resource.data.teacherId == request.auth.uid || isAdmin());
+      allow read: if isAuthenticated() && 
         resource.data.studentId == request.auth.uid;
     }
-    
-    // Écoles partenaires (lecture seule pour tous les utilisateurs authentifiés)
+
+    // === Partner Schools: Read for all authenticated, only admin can write ===
     match /partnerSchools/{schoolId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && 
-        request.auth.token.role == 'admin';
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
-    
-    // Configuration de domaine
+
+    // === Domain Configs: Read for all authenticated, only admin can write ===
     match /domainConfigs/{domainId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && 
-        request.auth.token.role == 'admin';
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
-    
-    // Règles par défaut - refuser l'accès
+
+    // === Default: Deny all ===
     match /{document=**} {
       allow read, write: if false;
     }
   }
-} 
+}
